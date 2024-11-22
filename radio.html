@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Radio Player</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+    }
+
+    h1 {
+      margin-top: 20px;
+      color: #333;
+    }
+
+    .player-container {
+      margin: 50px auto;
+      width: 80%;
+      max-width: 500px;
+      background: #fff;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .url-input-container {
+      margin-bottom: 20px;
+    }
+
+    .url-input-container input {
+      width: 80%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+
+    .url-input-container button {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-left: 10px;
+      transition: background-color 0.3s;
+    }
+
+    .url-input-container button:hover {
+      background-color: #0056b3;
+    }
+
+    audio {
+      width: 100%;
+      margin: 20px 0;
+    }
+
+    .controls {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .controls button {
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background-color 0.3s;
+    }
+
+    .controls button:hover {
+      background-color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <h1>Live Radio Player</h1>
+  <div class="player-container">
+    <div class="url-input-container">
+      <input type="text" id="streamUrlInput" placeholder="Enter radio stream URL">
+      <button id="loadStreamBtn">Load Stream</button>
+    </div>
+    <audio id="audioPlayer" controls>
+      <source id="audioSource" type="audio/mpeg">
+      Your browser does not support the audio element.
+    </audio>
+    <div class="controls">
+      <button id="backwardBtn">-30s</button>
+      <button id="playPauseBtn">Play/Pause</button>
+      <button id="forwardBtn">+30s</button>
+    </div>
+  </div>
+
+  <script>
+    // Select elements
+    const audioPlayer = document.getElementById('audioPlayer');
+    const audioSource = document.getElementById('audioSource');
+    const streamUrlInput = document.getElementById('streamUrlInput');
+    const loadStreamBtn = document.getElementById('loadStreamBtn');
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const backwardBtn = document.getElementById('backwardBtn');
+    const forwardBtn = document.getElementById('forwardBtn');
+
+    let currentStreamUrl = ''; // To store the current stream URL
+
+    // Load stream URL
+    loadStreamBtn.addEventListener('click', () => {
+      const streamUrl = streamUrlInput.value.trim();
+      if (streamUrl) {
+        currentStreamUrl = streamUrl; // Save the stream URL
+        audioSource.src = streamUrl;
+        audioPlayer.load();
+        audioPlayer.play();
+        playPauseBtn.textContent = 'Pause';
+      } else {
+        alert('Please enter a valid URL.');
+      }
+    });
+
+    // Play/Pause functionality
+    playPauseBtn.addEventListener('click', () => {
+      if (audioPlayer.paused) {
+        audioPlayer.play();
+        playPauseBtn.textContent = 'Pause';
+      } else {
+        audioPlayer.pause();
+        playPauseBtn.textContent = 'Play';
+      }
+    });
+
+    // Skip backward by 30 seconds
+    backwardBtn.addEventListener('click', () => {
+      if (audioPlayer.seekable.length > 0) {
+        const newTime = audioPlayer.currentTime - 30;
+        audioPlayer.currentTime = Math.max(newTime, 0);
+      } else {
+        console.log('Seeking is not supported for this stream.');
+      }
+    });
+
+    // Skip forward by 30 seconds
+    forwardBtn.addEventListener('click', () => {
+      if (audioPlayer.seekable.length > 0) {
+        const newTime = audioPlayer.currentTime + 30;
+        const livePoint = audioPlayer.seekable.end(0); // The end of the seekable range
+        if (newTime < livePoint) {
+          audioPlayer.currentTime = newTime;
+        } else {
+          // Automatically resume at the live point
+          audioPlayer.currentTime = livePoint;
+          console.log('Reached live point; staying at live stream.');
+        }
+      } else {
+        console.log('Seeking is not supported for this stream.');
+      }
+    });
+
+    // Ensure audio continues if the user seeks past the live point
+    audioPlayer.addEventListener('timeupdate', () => {
+      if (audioPlayer.currentTime >= audioPlayer.seekable.end(0)) {
+        console.log('At live point, continuing playback.');
+        audioPlayer.currentTime = audioPlayer.seekable.end(0);
+      }
+    });
+  </script>
+</body>
+</html>
